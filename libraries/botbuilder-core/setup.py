@@ -4,7 +4,26 @@
 import os
 from setuptools import setup
 
-VERSION = os.environ["packageVersion"] if "packageVersion" in os.environ else "4.15.0"
+
+def _resolve_version():
+    # CI sets packageVersion when building the release sdist.
+    if "packageVersion" in os.environ:
+        return os.environ["packageVersion"]
+    # When uv/pip rebuilds an already-published sdist, packageVersion is not set,
+    # but PKG-INFO from the sdist is present next to setup.py; read Version from it
+    # so the rebuilt wheel's metadata matches the sdist's index metadata (uv >=0.4
+    # rejects mismatches with 'Package metadata version X does not match given Y').
+    pkg_info = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PKG-INFO")
+    if os.path.isfile(pkg_info):
+        import email.parser
+        with open(pkg_info, encoding="utf-8") as f:
+            version = email.parser.Parser().parse(f).get("Version")
+            if version:
+                return version
+    return "4.15.0"
+
+
+VERSION = _resolve_version()
 REQUIRES = [
     "botbuilder-schema==4.14.0",
     "botframework-connector-forked>=1.0.11",
@@ -24,7 +43,7 @@ with open(os.path.join(root, "README.rst"), encoding="utf-8") as f:
 
 setup(
     name=package_info["__title__"] + "-forked",
-    version=package_info["__version__"],
+    version=VERSION,
     url=package_info["__uri__"],
     author=package_info["__author__"],
     description=package_info["__description__"],
