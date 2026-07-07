@@ -25,38 +25,62 @@ jobs:
         baseVersion: 1.0.0
         gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Verify FURY_PUSH_TOKEN is set
+      env:
+        FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
+      run: |
+        if [ -z "$FURY_PUSH_TOKEN" ]; then
+          echo "::error::FURY_PUSH_TOKEN secret is not set on this repo."
+          echo "Add it with: gh secret set FURY_PUSH_TOKEN --repo mapped/botbuilder-python"
+          exit 1
+        fi
+
     - name: publish botbuilder-integration-aiohttp-forked
       run: |
-        echo version: $packageVersion
+        echo "version: $packageVersion"
         python setup.py sdist
-        curl -F package=@./dist/botbuilder-integration-aiohttp-forked-$packageVersion.tar.gz https://${{ secrets.FURY_PUSH_TOKEN }}@push.fury.io/mapped/
+        # setuptools >=69 normalizes sdist filenames (PEP 625), so glob rather than
+        # hard-coding the hyphenated form we used to write.
+        sdist=$(ls -1 dist/*.tar.gz | head -n1)
+        echo "publishing $sdist"
+        curl --fail-with-body -F "package=@${sdist}" "https://${FURY_PUSH_TOKEN}@push.fury.io/mapped/"
       env:
         packageVersion: ${{ steps.vtl.outputs.ver_semVerNoMeta}}
+        FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
       working-directory: ./libraries/botbuilder-integration-aiohttp
-    
+
     - name: publish botframework-connector-forked
       run: |
-        echo version: $packageVersion
+        echo "version: $packageVersion"
         python setup.py sdist
-        curl -F package=@./dist/botframework-connector-forked-$packageVersion.tar.gz https://${{ secrets.FURY_PUSH_TOKEN }}@push.fury.io/mapped/
+        sdist=$(ls -1 dist/*.tar.gz | head -n1)
+        echo "publishing $sdist"
+        curl --fail-with-body -F "package=@${sdist}" "https://${FURY_PUSH_TOKEN}@push.fury.io/mapped/"
       env:
         packageVersion: ${{ steps.vtl.outputs.ver_semVerNoMeta}}
+        FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
       working-directory: ./libraries/botframework-connector
-    
+
     - name: publish botframework-streaming-forked
       run: |
-        echo version: $packageVersion
+        echo "version: $packageVersion"
         python setup.py sdist
-        curl -F package=@./dist/botframework-streaming-forked-$packageVersion.tar.gz https://${{ secrets.FURY_PUSH_TOKEN }}@push.fury.io/mapped/
+        sdist=$(ls -1 dist/*.tar.gz | head -n1)
+        echo "publishing $sdist"
+        curl --fail-with-body -F "package=@${sdist}" "https://${FURY_PUSH_TOKEN}@push.fury.io/mapped/"
       env:
         packageVersion: ${{ steps.vtl.outputs.ver_semVerNoMeta}}
+        FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
       working-directory: ./libraries/botframework-streaming
-    
+
     - name: publish botbuilder-core-forked
       run: |
-        echo version: $packageVersion
+        echo "version: $packageVersion"
         python setup.py sdist
-        curl -F package=@./dist/botbuilder-core-forked-$packageVersion.tar.gz https://${{ secrets.FURY_PUSH_TOKEN }}@push.fury.io/mapped/
+        sdist=$(ls -1 dist/*.tar.gz | head -n1)
+        echo "publishing $sdist"
+        curl --fail-with-body -F "package=@${sdist}" "https://${FURY_PUSH_TOKEN}@push.fury.io/mapped/"
       env:
         packageVersion: ${{ steps.vtl.outputs.ver_semVerNoMeta}}
+        FURY_PUSH_TOKEN: ${{ secrets.FURY_PUSH_TOKEN }}
       working-directory: ./libraries/botbuilder-core

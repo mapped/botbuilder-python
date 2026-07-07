@@ -4,8 +4,27 @@
 import os
 from setuptools import setup
 
+
+def _resolve_version():
+    # CI sets packageVersion when building the release sdist.
+    if "packageVersion" in os.environ:
+        return os.environ["packageVersion"]
+    # When uv/pip rebuilds an already-published sdist, packageVersion is not set,
+    # but PKG-INFO from the sdist is present next to setup.py; read Version from it
+    # so the rebuilt wheel's metadata matches the sdist's index metadata (uv >=0.4
+    # rejects mismatches with 'Package metadata version X does not match given Y').
+    pkg_info = os.path.join(os.path.dirname(os.path.abspath(__file__)), "PKG-INFO")
+    if os.path.isfile(pkg_info):
+        import email.parser
+        with open(pkg_info, encoding="utf-8") as f:
+            version = email.parser.Parser().parse(f).get("Version")
+            if version:
+                return version
+    return "4.15.0"
+
+
 NAME = "botframework-connector"
-VERSION = os.environ["packageVersion"] if "packageVersion" in os.environ else "4.15.0"
+VERSION = _resolve_version()
 REQUIRES = [
     "msrest==0.6.*",
     "requests>=2.23.0,<3.0.0",
